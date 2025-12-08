@@ -1,0 +1,32 @@
+{
+  "name": "food-lover-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "��#\u0000 \u0000S\u0000e\u0000r\u0000v\u0000e\u0000r\u0000-\u0000s\u0000i\u0000d\u0000e\u0000\r\u0000 \u0000",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "firebase-admin": "^12.7.0",
+    "mongodb": "^7.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Evasfaisal/Server-side.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Evasfaisal/Server-side/issues"
+  },
+  "homepage": "https://github.com/Evasfaisal/Server-side#readme",
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
