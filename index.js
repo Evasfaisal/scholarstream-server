@@ -60,12 +60,14 @@ async function startServer() {
     const userRoutes = require('./routes/userRoutes');
     const scholarshipRoutes = require('./routes/scholarshipRoutes');
     const applicationRoutes = require('./routes/applicationRoutes');
-  
+    const paymentRoutes = require('./routes/paymentRoutes');
+
 
     app.use('/api/users', userRoutes);
     app.use('/api/scholarships', scholarshipRoutes);
     app.use('/api/applications', applicationRoutes);
-   
+    app.use('/api/payment', paymentRoutes);
+
 
     app.get('/', (req, res) => {
       res.send('Server running...');
