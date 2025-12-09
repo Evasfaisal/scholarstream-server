@@ -56,13 +56,16 @@ async function startServer() {
     const dbName = process.env.DB_NAME || client.db().databaseName;
     app.locals.db = client.db(dbName);
 
-    const reviewRoutes = require('./routes/reviewRoutes');
-    const favoriteRoutes = require('./routes/favoriteRoutes');
-    const restaurantRoutes = require('./routes/restaurantRoutes');
 
-    app.use('/api/reviews', reviewRoutes);
-    app.use('/api/favorites', favoriteRoutes);
-    app.use('/api/restaurants', restaurantRoutes);
+    const userRoutes = require('./routes/userRoutes');
+    const scholarshipRoutes = require('./routes/scholarshipRoutes');
+    const applicationRoutes = require('./routes/applicationRoutes');
+  
+
+    app.use('/api/users', userRoutes);
+    app.use('/api/scholarships', scholarshipRoutes);
+    app.use('/api/applications', applicationRoutes);
+   
 
     app.get('/', (req, res) => {
       res.send('Server running...');
