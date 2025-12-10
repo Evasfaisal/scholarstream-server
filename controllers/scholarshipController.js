@@ -1,5 +1,52 @@
 const Scholarship = require('../models/Scholarship');
 
+exports.getAllScholarships = async (req, res) => {
+    try {
+        const db = req.app.locals.db;
+        const { search = '', country = '', category = '', sort = '', page = 1, limit = 10 } = req.query;
+
+        // Build filter query
+        const filter = {};
+        if (search) {
+            filter.$or = [
+                { scholarshipName: { $regex: search, $options: 'i' } },
+                { universityName: { $regex: search, $options: 'i' } },
+                { degree: { $regex: search, $options: 'i' } }
+            ];
+        }
+        if (country) filter.universityCountry = country;
+        if (category) filter.scholarshipCategory = category;
+
+        // Build sort options
+        let sortOptions = {};
+        if (sort === 'applicationFees_asc') sortOptions.applicationFees = 1;
+        else if (sort === 'applicationFees_desc') sortOptions.applicationFees = -1;
+        else if (sort === 'postDate_asc') sortOptions.scholarshipPostDate = 1;
+        else if (sort === 'postDate_desc') sortOptions.scholarshipPostDate = -1;
+
+        // Pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const scholarships = await db.collection('scholarships')
+            .find(filter)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(parseInt(limit))
+            .toArray();
+
+        const total = await db.collection('scholarships').countDocuments(filter);
+
+        res.json({
+            scholarships,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit))
+        });
+    } catch (err) {
+        console.error('GET /api/scholarships error:', err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.createScholarship = async (req, res) => {
     try {
         const db = req.app.locals.db;
@@ -9,9 +56,7 @@ exports.createScholarship = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
-};
-
-exports.getScholarshipById = async (req, res) => {
+}; exports.getScholarshipById = async (req, res) => {
     try {
         const db = req.app.locals.db;
         const { id } = req.params;
