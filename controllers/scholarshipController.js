@@ -67,3 +67,29 @@ exports.createScholarship = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+exports.updateScholarship = async (req, res) => {
+    try {
+        const db = req.app.locals.db;
+        const { id } = req.params;
+        const { ObjectId } = require('mongodb');
+        const scholarship = req.body;
+        const result = await db.collection('scholarships').updateOne({ _id: new ObjectId(id) }, { $set: scholarship });
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.deleteScholarship = async (req, res) => {
+    try {
+        const db = req.app.locals.db;
+        const { id } = req.params;
+        const { ObjectId } = require('mongodb');
+        const result = await db.collection('scholarships').deleteOne({ _id: new ObjectId(id) });
+        if (result.deletedCount === 0) return res.status(404).json({ message: 'Scholarship not found' });
+        res.json({ message: 'Scholarship deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
