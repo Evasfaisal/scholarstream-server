@@ -19,7 +19,17 @@ exports.getAllScholarships = async (req, res) => {
 
         // Build sort options
         let sortOptions = {};
-        if (sort === 'applicationFees_asc') sortOptions.applicationFees = 1;
+        if (sort === 'fees_asc') {
+            sortOptions = { applicationFees: 1 };  // Low to High
+        } else if (sort === 'fees_desc') {
+            sortOptions = { applicationFees: -1 }; // High to Low
+        } else if (sort === 'date_desc') {
+            sortOptions = { scholarshipPostDate: -1 }; // Newest first
+        } else if (sort === 'date_asc') {
+            sortOptions = { scholarshipPostDate: 1 };  // Oldest first
+        }
+        // Support old format for backward compatibility
+        else if (sort === 'applicationFees_asc') sortOptions.applicationFees = 1;
         else if (sort === 'applicationFees_desc') sortOptions.applicationFees = -1;
         else if (sort === 'postDate_asc') sortOptions.scholarshipPostDate = 1;
         else if (sort === 'postDate_desc') sortOptions.scholarshipPostDate = -1;
