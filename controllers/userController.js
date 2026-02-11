@@ -4,13 +4,32 @@ const jwt = require('jsonwebtoken');
 exports.registerUser = async (req, res) => {
     try {
         const db = req.app.locals.db;
-        const { name, email, photoURL, password } = req.body;
+        const { uid, name, email, photoURL, password, role } = req.body;
+
+        // Check if user already exists
         const existingUser = await User.getUserByEmail(db, email);
-        if (existingUser) return res.status(400).json({ message: 'User already exists' });
-        const user = { name, email, photoURL, role: 'Student', createdAt: new Date() };
+        if (existingUser) {
+            // User exists, return existing user data
+            return res.status(200).json({
+                user: existingUser,
+                message: 'User already exists'
+            });
+        }
+
+        // Create new user with provided or default role
+        const user = {
+            uid: uid || null,
+            name,
+            email,
+            photoURL,
+            role: role || 'Student',
+            createdAt: new Date()
+        };
+
         const result = await User.createUser(db, user);
-        const token = jwt.sign({ email, role: 'Student' }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.status(201).json({ user: result, token });
+        const token = jwt.sign({ email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.status(201).json({ user: { ...user, _id: result.insertedId }, token });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
