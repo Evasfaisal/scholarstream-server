@@ -53,12 +53,16 @@ async function startServer() {
     const scholarshipRoutes = require('./routes/scholarshipRoutes');
     const applicationRoutes = require('./routes/applicationRoutes');
     const paymentRoutes = require('./routes/paymentRoutes');
+    const reviewRoutes = require('./routes/reviewRoutes');
+    const analyticsRoutes = require('./routes/analyticsRoutes');
 
 
     app.use('/api/users', userRoutes);
     app.use('/api/scholarships', scholarshipRoutes);
     app.use('/api/applications', applicationRoutes);
     app.use('/api/payment', paymentRoutes);
+    app.use('/api/reviews', reviewRoutes);
+    app.use('/api/analytics', analyticsRoutes);
 
 
     app.get('/', (req, res) => {
