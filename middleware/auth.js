@@ -3,13 +3,28 @@ const admin = require('firebase-admin');
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        })
-    });
+    try {
+        // Try loading from service account file first
+        const serviceAccount = require('../serviceAccountKey.json');
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log('✅ Firebase Admin initialized with service account file');
+    } catch (err) {
+        // Fallback to environment variables
+        if (process.env.FIREBASE_PROJECT_ID) {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+                })
+            });
+            console.log('✅ Firebase Admin initialized with environment variables');
+        } else {
+            console.warn('⚠️ Firebase Admin not initialized - no credentials found');
+        }
+    }
 }
 
 const requireAuth = async (req, res, next) => {
@@ -22,12 +37,12 @@ const requireAuth = async (req, res, next) => {
             const decodedToken = await admin.auth().verifyIdToken(token);
             req.userEmail = decodedToken.email;
             req.firebaseUid = decodedToken.uid;
-            
+
             // Get user role from database
             const db = req.app.locals.db;
             const user = await db.collection('users').findOne({ email: decodedToken.email });
             req.userRole = user?.role || 'Student';
-            
+
             return next();
         } catch (firebaseErr) {
             // If Firebase fails, try JWT (for backward compatibility)
@@ -64,7 +79,7 @@ const optionalAuth = async (req, res, next) => {
                 const decodedToken = await admin.auth().verifyIdToken(token);
                 req.userEmail = decodedToken.email;
                 req.firebaseUid = decodedToken.uid;
-                
+
                 const db = req.app.locals.db;
                 const user = await db.collection('users').findOne({ email: decodedToken.email });
                 req.userRole = user?.role || 'Student';
