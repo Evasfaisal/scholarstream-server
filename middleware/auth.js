@@ -1,14 +1,41 @@
 const jwt = require('jsonwebtoken');
+const admin = require('firebase-admin');
 
-const requireAuth = (req, res, next) => {
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        })
+    });
+}
+
+const requireAuth = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'Unauthorized: No token provided' });
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.userEmail = decoded.email;
-        req.userRole = decoded.role;
-        next();
+        // Try Firebase token verification first
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(token);
+            req.userEmail = decodedToken.email;
+            req.firebaseUid = decodedToken.uid;
+            
+            // Get user role from database
+            const db = req.app.locals.db;
+            const user = await db.collection('users').findOne({ email: decodedToken.email });
+            req.userRole = user?.role || 'Student';
+            
+            return next();
+        } catch (firebaseErr) {
+            // If Firebase fails, try JWT (for backward compatibility)
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.userEmail = decoded.email;
+            req.userRole = decoded.role;
+            next();
+        }
     } catch (err) {
         return res.status(401).json({ message: 'Unauthorized: Invalid token' });
     }
@@ -28,13 +55,25 @@ const verifyModerator = (req, res, next) => {
     next();
 };
 
-const optionalAuth = (req, res, next) => {
+const optionalAuth = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (token) {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.userEmail = decoded.email;
-            req.userRole = decoded.role;
+            // Try Firebase token first
+            try {
+                const decodedToken = await admin.auth().verifyIdToken(token);
+                req.userEmail = decodedToken.email;
+                req.firebaseUid = decodedToken.uid;
+                
+                const db = req.app.locals.db;
+                const user = await db.collection('users').findOne({ email: decodedToken.email });
+                req.userRole = user?.role || 'Student';
+            } catch (firebaseErr) {
+                // Try JWT as fallback
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                req.userEmail = decoded.email;
+                req.userRole = decoded.role;
+            }
         }
     } catch (err) {
         // Token invalid, but continue anyway
