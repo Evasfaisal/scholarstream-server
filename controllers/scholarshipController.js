@@ -7,6 +7,8 @@ exports.getAllScholarships = async (req, res) => {
 
         // Build filter query
         const filter = {};
+
+        // Search functionality
         if (search) {
             filter.$or = [
                 { scholarshipName: { $regex: search, $options: 'i' } },
@@ -14,8 +16,19 @@ exports.getAllScholarships = async (req, res) => {
                 { degree: { $regex: search, $options: 'i' } }
             ];
         }
+
+        // Country filtering
         if (country) filter.universityCountry = country;
-        if (category) filter.scholarshipCategory = category;
+
+        // Category filtering - degree or scholarshipCategory
+        if (category) {
+            const degreeTypes = ['Bachelor', 'Masters', 'Diploma', 'Master'];
+            if (degreeTypes.includes(category)) {
+                filter.degree = category;  // Degree filter
+            } else {
+                filter.subjectCategory = category;  // Subject category filter (Engineering/Science/Arts/Business)
+            }
+        }
 
         // Build sort options
         let sortOptions = {};
