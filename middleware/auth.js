@@ -38,13 +38,27 @@ const requireAuth = async (req, res, next) => {
             req.userEmail = decodedToken.email;
             req.firebaseUid = decodedToken.uid;
 
-            // Get user role from database
-            const db = req.app.locals.db;
-            const user = await db.collection('users').findOne({ email: decodedToken.email });
-            req.userRole = user?.role || 'Student';
+            // Fetch user role from Firestore
+            try {
+                const userDoc = await admin.firestore().collection('users').doc(decodedToken.uid).get();
+
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    req.userRole = userData.role || 'Student';
+                    console.log(`✅ User authenticated: ${req.userEmail}, Role: ${req.userRole}`);
+                } else {
+                    // User not in Firestore, default to Student
+                    req.userRole = 'Student';
+                    console.log(`⚠️  User ${req.userEmail} not found in Firestore, defaulting to Student role`);
+                }
+            } catch (firestoreErr) {
+                console.error('Firestore fetch error:', firestoreErr.message);
+                req.userRole = 'Student';
+            }
 
             return next();
         } catch (firebaseErr) {
+            console.error('Firebase auth error:', firebaseErr.message);
             // If Firebase fails, try JWT (for backward compatibility)
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.userEmail = decoded.email;
@@ -52,6 +66,7 @@ const requireAuth = async (req, res, next) => {
             next();
         }
     } catch (err) {
+        console.error('Auth error:', err.message);
         return res.status(401).json({ message: 'Unauthorized: Invalid token' });
     }
 };
@@ -64,9 +79,16 @@ const verifyAdmin = (req, res, next) => {
 };
 
 const verifyModerator = (req, res, next) => {
+    console.log(`🔍 Checking moderator access - User: ${req.userEmail}, Role: ${req.userRole}`);
     if (req.userRole !== 'Moderator' && req.userRole !== 'Admin') {
-        return res.status(403).json({ message: 'Forbidden: Moderator or Admin access required' });
+        console.log(`❌ Access denied - Required: Moderator/Admin, Current: ${req.userRole}`);
+        return res.status(403).json({
+            message: 'Forbidden: Moderator or Admin access required',
+            currentRole: req.userRole,
+            userEmail: req.userEmail
+        });
     }
+    console.log(`✅ Moderator access granted`);
     next();
 };
 
@@ -80,9 +102,17 @@ const optionalAuth = async (req, res, next) => {
                 req.userEmail = decodedToken.email;
                 req.firebaseUid = decodedToken.uid;
 
-                const db = req.app.locals.db;
-                const user = await db.collection('users').findOne({ email: decodedToken.email });
-                req.userRole = user?.role || 'Student';
+                // Fetch role from Firestore
+                try {
+                    const userDoc = await admin.firestore().collection('users').doc(decodedToken.uid).get();
+                    if (userDoc.exists) {
+                        req.userRole = userDoc.data().role || 'Student';
+                    } else {
+                        req.userRole = 'Student';
+                    }
+                } catch {
+                    req.userRole = 'Student';
+                }
             } catch (firebaseErr) {
                 // Try JWT as fallback
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
