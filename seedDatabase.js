@@ -1,11 +1,15 @@
 const { MongoClient } = require('mongodb');
-require('dotenv').config();
+const dotenv = require('dotenv');
+dotenv.config();
+const uri = process.env.MONGO_URI;
+const dbName = process.env.DB_NAME;
 
 const scholarshipsData = [
     {
         scholarshipName: "Global Excellence Scholarship",
         universityName: "Harvard University",
         universityImage: "https://i.ibb.co/BsLqXwz/harvard.jpg",
+        image: "https://i.ibb.co/BsLqXwz/harvard.jpg",
         universityCountry: "USA",
         universityCity: "Cambridge",
         universityWorldRank: 1,
@@ -23,6 +27,7 @@ const scholarshipsData = [
         scholarshipName: "Merit Scholarship",
         universityName: "Stanford University",
         universityImage: "https://i.ibb.co/Y0qNdXP/stanford.jpg",
+        image: "https://i.ibb.co/Y0qNdXP/stanford.jpg",
         universityCountry: "USA",
         universityCity: "Stanford",
         universityWorldRank: 2,
@@ -40,6 +45,7 @@ const scholarshipsData = [
         scholarshipName: "International Student Grant",
         universityName: "MIT",
         universityImage: "https://i.ibb.co/kBvZV6M/mit.jpg",
+        image: "https://i.ibb.co/kBvZV6M/mit.jpg",
         universityCountry: "USA",
         universityCity: "Cambridge",
         universityWorldRank: 3,
@@ -57,6 +63,7 @@ const scholarshipsData = [
         scholarshipName: "Academic Excellence Award",
         universityName: "Oxford University",
         universityImage: "https://i.ibb.co/3RfLxYZ/oxford.jpg",
+        image: "https://i.ibb.co/3RfLxYZ/oxford.jpg",
         universityCountry: "UK",
         universityCity: "Oxford",
         universityWorldRank: 4,
@@ -74,6 +81,7 @@ const scholarshipsData = [
         scholarshipName: "Research Fellowship",
         universityName: "Cambridge University",
         universityImage: "https://i.ibb.co/LPcgHXm/cambridge.jpg",
+        image: "https://i.ibb.co/LPcgHXm/cambridge.jpg",
         universityCountry: "UK",
         universityCity: "Cambridge",
         universityWorldRank: 5,
@@ -90,6 +98,7 @@ const scholarshipsData = [
         scholarshipName: "Innovation Scholarship",
         universityName: "ETH Zurich",
         universityImage: "https://i.ibb.co/ZMTfR9v/eth.jpg",
+        image: "https://i.ibb.co/ZMTfR9v/eth.jpg",
         universityCountry: "Switzerland",
         universityCity: "Zurich",
         universityWorldRank: 6,
@@ -107,6 +116,7 @@ const scholarshipsData = [
         scholarshipName: "Diversity Scholarship",
         universityName: "University of Toronto",
         universityImage: "https://i.ibb.co/JCY3Wxz/toronto.jpg",
+        image: "https://i.ibb.co/JCY3Wxz/toronto.jpg",
         universityCountry: "Canada",
         universityCity: "Toronto",
         universityWorldRank: 18,
@@ -124,6 +134,7 @@ const scholarshipsData = [
         scholarshipName: "Future Leaders Program",
         universityName: "National University of Singapore",
         universityImage: "https://i.ibb.co/wMfGHcL/nus.jpg",
+        image: "https://i.ibb.co/wMfGHcL/nus.jpg",
         universityCountry: "Singapore",
         universityCity: "Singapore",
         universityWorldRank: 11,
@@ -141,6 +152,7 @@ const scholarshipsData = [
         scholarshipName: "Sports Excellence Scholarship",
         universityName: "University of Melbourne",
         universityImage: "https://i.ibb.co/WgzBYxf/melbourne.jpg",
+        image: "https://i.ibb.co/WgzBYxf/melbourne.jpg",
         universityCountry: "Australia",
         universityCity: "Melbourne",
         universityWorldRank: 14,
@@ -158,6 +170,7 @@ const scholarshipsData = [
         scholarshipName: "Environmental Studies Grant",
         universityName: "Technical University of Munich",
         universityImage: "https://i.ibb.co/K5vNp7J/tum.jpg",
+        image: "https://i.ibb.co.com/Kxsj0mpX/massachusetts-flag-with-banner.jpg",
         universityCountry: "Germany",
         universityCity: "Munich",
         universityWorldRank: 50,
@@ -174,24 +187,37 @@ const scholarshipsData = [
 ];
 
 async function seedDatabase() {
-    const client = new MongoClient(process.env.MONGO_URI);
+    const client = new MongoClient(uri);
 
     try {
         await client.connect();
         console.log('✅ Connected to MongoDB');
 
-        const db = client.db(process.env.DB_NAME || 'scholarstream');
+        const db = client.db(dbName);
         const collection = db.collection('scholarships');
 
-        const count = await collection.countDocuments();
+        // Delete all old scholarships
+        const deleteResult = await collection.deleteMany({});
+        console.log(`🗑️ Deleted ${deleteResult.deletedCount} old scholarships.`);
 
-        if (count > 0) {
-            console.log(`⚠️  Database already has ${count} scholarships. Skipping seed.`);
-            console.log('To reset, delete all documents first and run this script again.');
-        } else {
-            const result = await collection.insertMany(scholarshipsData);
-            console.log(`✅ Successfully inserted ${result.insertedCount} scholarships!`);
-        }
+        // Prepare image links
+        const imageLinks = [
+            "https://i.ibb.co.com/QF8kQDJw/54.jpg",
+            "https://i.ibb.co.com/WW7WrC79/121566-OQ6-ZM8-173.jpg",
+            "https://i.ibb.co.com/4gRw1rnR/124493-OQIKUM-358.jpg",
+            "https://i.ibb.co.com/1tjFYBBj/330668-P9-SJW6-863.jpg",
+            "https://i.ibb.co.com/6RMxzgwN/7598133.jpg",
+            "https://i.ibb.co.com/Kxsj0mpX/massachusetts-flag-with-banner.jpg"
+        ];
+
+        // Assign random images to 10 scholarships
+        let newScholarships = scholarshipsData.slice(0, 10).map((sch, idx) => ({
+            ...sch,
+            image: imageLinks[idx % imageLinks.length]
+        }));
+
+        const result = await collection.insertMany(newScholarships);
+        console.log(`✅ Successfully inserted ${result.insertedCount} scholarships!`);
 
     } catch (err) {
         console.error('❌ Error seeding database:', err);
@@ -201,4 +227,35 @@ async function seedDatabase() {
     }
 }
 
+async function updateImages() {
+    const client = new MongoClient(uri);
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        const scholarships = db.collection('scholarships');
+        // image ফিল্ডে image || photo || universityImage বসান
+        const result = await scholarships.updateMany(
+            {},
+            [
+                {
+                    $set: {
+                        image: {
+                            $ifNull: [
+                                "$image",
+                                { $ifNull: ["$photo", "$universityImage"] }
+                            ]
+                        }
+                    }
+                }
+            ]
+        );
+        console.log(`Updated ${result.modifiedCount} scholarships.`);
+    } catch (err) {
+        console.error('Error updating images:', err);
+    } finally {
+        await client.close();
+    }
+}
+
 seedDatabase();
+updateImages();
