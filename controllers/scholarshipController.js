@@ -49,12 +49,18 @@ exports.getAllScholarships = async (req, res) => {
 
         // Pagination
         const skip = (parseInt(page) - 1) * parseInt(limit);
-        const scholarships = await db.collection('scholarships')
+        let scholarships = await db.collection('scholarships')
             .find(filter)
             .sort(sortOptions)
             .skip(skip)
             .limit(parseInt(limit))
             .toArray();
+
+        // Ensure image field is always set
+        scholarships = scholarships.map(s => ({
+            ...s,
+            image: s.image || s.photo || s.universityImage || null
+        }));
 
         const total = await db.collection('scholarships').countDocuments(filter);
 
