@@ -6,17 +6,17 @@ exports.registerUser = async (req, res) => {
         const db = req.app.locals.db;
         const { uid, name, email, photoURL, password, role } = req.body;
 
-        // Check if user already exists
+       
         const existingUser = await User.getUserByEmail(db, email);
         if (existingUser) {
-            // User exists, return existing user data
+           
             return res.status(200).json({
                 user: existingUser,
                 message: 'User already exists'
             });
         }
 
-        // Create new user with provided or default role
+       
         const user = {
             uid: uid || null,
             name,

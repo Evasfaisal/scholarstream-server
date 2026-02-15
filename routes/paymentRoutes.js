@@ -3,7 +3,7 @@ const router = express.Router();
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Create Payment Intent
+
 router.post('/create-payment-intent', async (req, res) => {
     try {
         const { amount, currency = 'usd', metadata = {} } = req.body;

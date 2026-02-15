@@ -1,3 +1,18 @@
+
+
+
+const admin = require('firebase-admin');
+if (!process.env.FB_SERVICE_KEY) {
+  throw new Error('FB_SERVICE_KEY environment variable is missing!');
+}
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8');
+const serviceAccount = JSON.parse(decoded);
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
+
 const express = require('express');
 const cors = require('cors');
 
@@ -48,6 +63,7 @@ async function startServer() {
     const dbName = process.env.DB_NAME || client.db().databaseName;
     app.locals.db = client.db(dbName);
 
+   
 
     const userRoutes = require('./routes/userRoutes');
     const scholarshipRoutes = require('./routes/scholarshipRoutes');

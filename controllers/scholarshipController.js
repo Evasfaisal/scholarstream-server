@@ -5,10 +5,10 @@ exports.getAllScholarships = async (req, res) => {
         const db = req.app.locals.db;
         const { search = '', country = '', category = '', sort = '', page = 1, limit = 10 } = req.query;
 
-        // Build filter query
+     
         const filter = {};
 
-        // Search functionality
+     
         if (search) {
             filter.$or = [
                 { scholarshipName: { $regex: search, $options: 'i' } },
@@ -17,37 +17,37 @@ exports.getAllScholarships = async (req, res) => {
             ];
         }
 
-        // Country filtering
+      
         if (country) filter.universityCountry = country;
 
-        // Category filtering - degree or scholarshipCategory
+       
         if (category) {
             const degreeTypes = ['Bachelor', 'Masters', 'Diploma', 'Master'];
             if (degreeTypes.includes(category)) {
-                filter.degree = category;  // Degree filter
+                filter.degree = category;  
             } else {
-                filter.subjectCategory = category;  // Subject category filter (Engineering/Science/Arts/Business)
+                filter.subjectCategory = category;  
             }
         }
 
-        // Build sort options
+      
         let sortOptions = {};
         if (sort === 'fees_asc') {
-            sortOptions = { applicationFees: 1 };  // Low to High
+            sortOptions = { applicationFees: 1 }; 
         } else if (sort === 'fees_desc') {
-            sortOptions = { applicationFees: -1 }; // High to Low
+            sortOptions = { applicationFees: -1 }; 
         } else if (sort === 'date_desc') {
-            sortOptions = { scholarshipPostDate: -1 }; // Newest first
+            sortOptions = { scholarshipPostDate: -1 }; 
         } else if (sort === 'date_asc') {
-            sortOptions = { scholarshipPostDate: 1 };  // Oldest first
+            sortOptions = { scholarshipPostDate: 1 };  
         }
-        // Support old format for backward compatibility
+       
         else if (sort === 'applicationFees_asc') sortOptions.applicationFees = 1;
         else if (sort === 'applicationFees_desc') sortOptions.applicationFees = -1;
         else if (sort === 'postDate_asc') sortOptions.scholarshipPostDate = 1;
         else if (sort === 'postDate_desc') sortOptions.scholarshipPostDate = -1;
 
-        // Pagination
+      
         const skip = (parseInt(page) - 1) * parseInt(limit);
         let scholarships = await db.collection('scholarships')
             .find(filter)
@@ -56,7 +56,7 @@ exports.getAllScholarships = async (req, res) => {
             .limit(parseInt(limit))
             .toArray();
 
-        // Ensure image field is always set
+       
         scholarships = scholarships.map(s => ({
             ...s,
             image: s.image || s.photo || s.universityImage || null
